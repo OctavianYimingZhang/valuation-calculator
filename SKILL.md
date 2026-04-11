@@ -160,6 +160,31 @@ Revenue CAGR:
 
 ---
 
+### Phase 1b: Market Pricing Mechanism Pre-Check
+
+Before running valuation models, reverse-engineer how the market actually prices this stock:
+
+```
+Step 1: Identify the market's current pricing method
+  - What multiple does the stock trade most closely to? (P/E, EV/EBITDA, P/S, P/B)
+  - Evidence: which metric best explains stock price movements around earnings?
+  - Sell-side consensus: what methodology do most analysts use?
+
+Step 2: Identify hidden assumptions in current price
+  - What revenue growth rate is implied by current multiples?
+  - What margin trajectory is priced in?
+  - What terminal state does the market assume?
+
+Step 3: Align valuation model selection with market reality
+  - If market prices on P/S (growth company): lead with relative valuation, DCF secondary
+  - If market prices on P/E (mature company): lead with earnings-based models
+  - If market prices on P/B (financial/asset-heavy): lead with residual income
+  - If market prices on EV/EBITDA (levered/capital-intensive): lead with EBITDA-based models
+  - Run all applicable models regardless, but WEIGHT the output toward the market's method
+```
+
+This step ensures valuation output is RELEVANT to how the stock actually trades, not just academically correct.
+
 ### Phase 2: Valuation Engine
 
 Run ALL applicable models. Skip models that are inappropriate for the company type
@@ -415,7 +440,64 @@ Step 4: Davis Double Kill (downside scenario)
   Bear Price = Bear EPS * Trough P/E
 ```
 
-#### 2.7 Residual Income Valuation
+#### 2.7 NAD Price Decomposition (Price Floor Analysis)
+
+Decompose the current stock price into mutually exclusive "floors" — value layers that different investor types are paying for, each with specific evidence, reliability, and collapse conditions. This is NOT a valuation model — it is a reverse-engineering of what the market is currently paying for.
+
+```
+Step 1: Identify the Pricing Bridge
+  Current Price = Floor 1 + Floor 2 + Floor 3 + ... - Discount Floor(s)
+  Must approximately sum to current price (±15%)
+
+Step 2: Define 2-4 Positive Floors + ≥1 Negative Floor
+
+  For each floor, specify:
+  | Field | Required |
+  |-------|----------|
+  | Floor Name | Descriptive label (e.g., "Core Business Value", "AI Growth Premium") |
+  | Implied Value | Dollar amount per share |
+  | Evidence | What supports this floor |
+  | Reliability | High / Medium / Low |
+  | Observation Signal | What to watch for changes |
+  | Collapse Condition | What specific event/data breaks this floor |
+  | Who Pays | Which investor type supports this layer |
+
+Step 3: Map Downside Path
+  - Which floor breaks first? (usually the most narrative-driven floor)
+  - If it breaks, what price range results?
+  - Which floor breaks next? (cascade analysis)
+
+Step 4: Map Upside Path
+  - Which floor thickens first? (usually the floor with nearest catalyst)
+  - If it thickens, what price range results?
+  - What would add a new floor? (new growth vector, M&A, etc.)
+```
+
+**Floor Types (common patterns):**
+- **Foundation Floor**: Balance sheet value, net cash, liquidation value
+- **Core Business Floor**: Stable earnings power at normalized multiples
+- **Growth/Narrative Floor**: Premium for expected growth above market rate
+- **Option Value Floor**: Upside from new products, markets, or transformations
+- **Discount Floor (negative)**: Historical credibility issues, governance risk, policy risk
+
+**Common Mistakes:**
+- Floors that overlap (same value counted twice)
+- No negative floor (every stock has discount factors)
+- Bridge doesn't sum to approximately current price
+- Floors defined as valuation methods rather than value layers
+
+**Example (simplified):**
+```
+Current Price: $69
+Floor 1 (Core Brokerage): $25 — stable transaction + NII revenue at peer multiples
+Floor 2 (Growth Premium): $20 — 52% revenue growth commanding above-peer P/E
+Floor 3 (Platform Optionality): $18 — crypto, prediction markets, international
+Floor 4 (Narrative/AI): $10 — AI-driven platform story, Gold flywheel
+Discount Floor: -$4 — MAU decline, crypto volatility, regulatory history
+Bridge: $25 + $20 + $18 + $10 - $4 = $69 ✓
+```
+
+#### 2.9 Residual Income Valuation
 
 Best for financial companies and asset-heavy businesses.
 
@@ -435,7 +517,7 @@ Justified P/B from RI:
   If ROE < re: P/B < 1 (value destruction)
 ```
 
-#### 2.8 Dividend Discount Model (DDM)
+#### 2.10 Dividend Discount Model (DDM)
 
 Only for companies with consistent dividend payments.
 
@@ -570,6 +652,7 @@ Current Price: $[XX.XX] | Market Cap: $[XX.X]B
    | EPS x Hist PE          | $XX.XX          | +/-XX%     |
    | SOTP (if applicable)   | $XX.XX          | +/-XX%     |
    | Residual Income        | $XX.XX          | +/-XX%     |
+   | NAD Floor Analysis     | See breakdown   | See floors |
    | **Median of All**      | **$XX.XX**      | **+/-XX%** |
 
 3. SCENARIO ANALYSIS
