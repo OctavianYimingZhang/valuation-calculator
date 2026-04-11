@@ -282,8 +282,9 @@ Create a matrix varying:
 
 #### 2.3 Sum-of-the-Parts (SOTP) Valuation
 
-Use when company has distinct business segments with different growth profiles.
+Use when company has distinct business segments, geographic entities, or subsidiaries with different growth profiles, risk characteristics, or applicable valuation methodologies.
 
+**Standard Segment SOTP:**
 ```
 Step 1: Identify segments from SEC filings or Bloomberg
 Step 2: For each segment:
@@ -301,7 +302,120 @@ Run three scenarios:
   Optimistic: High-end multiples
 ```
 
-#### 2.4 Residual Income Valuation
+**Geographic/Entity SOTP (for cross-border companies):**
+When a company has publicly listed subsidiaries or operations in different jurisdictions:
+```
+Step 1: Identify entities (e.g., parent vs listed subsidiary, US vs international operations)
+Step 2: For listed subsidiaries:
+  - Use market cap as starting point
+  - Apply ownership percentage: Parent's share = Subsidiary Market Cap * Ownership %
+  - Apply geographic/political risk discount if warranted (e.g., 20-40% for China-listed subs)
+Step 3: For non-listed segments:
+  - Estimate revenue allocation by geography (from 10-K geographic disclosures)
+  - Apply region-appropriate peer multiples
+Step 4: Sum all entity values
+Step 5: Apply conglomerate discount if appropriate (typically 10-20%)
+```
+
+**Per-Unit SOTP (for capacity-based businesses):**
+When a company's value can be anchored to physical capacity or assets:
+```
+Step 1: Identify per-unit valuation anchors from comparable transactions:
+  - EV/MW (power generation, data centers): Use recent M&A transactions as benchmarks
+  - EV/GW (semiconductor capacity, solar manufacturing)
+  - EV/subscriber or EV/user (platform businesses)
+  - EV/store or EV/location (retail, healthcare facilities)
+  - EV/boe or EV/oz (oil & gas, mining reserves)
+
+Step 2: Apply per-unit value to company's capacity:
+  Segment Value = Company Units * Per-Unit Value from Comparable Transaction
+
+Step 3: Apply discount for:
+  - Contracted vs uncontracted capacity (e.g., 40-60% discount for uncontracted)
+  - Operational vs under-construction (e.g., 30-50% discount for under-construction)
+  - Customer quality gap vs comparable (e.g., comparable had hyperscaler contracts)
+
+Example (data center):
+  AirTrunk acquisition: $161B for 1.8GW = ~$89.5B/GW
+  Company has 0.66GW operational = 0.66 * $89.5B = ~$59B implied
+  Apply 40% discount (no comparable customer contracts) = ~$35B
+```
+
+#### 2.4 Comparable Transaction Analysis
+
+Use recent M&A transactions involving similar companies to derive valuation benchmarks.
+
+```
+Step 1: Identify 3-5 recent transactions (last 3 years) in the same sector
+Step 2: For each transaction, calculate:
+  - EV/Revenue at acquisition
+  - EV/EBITDA at acquisition
+  - EV/per-unit metric (MW, GW, subscriber, etc.)
+  - Premium paid over pre-announcement price
+
+Step 3: Build comparison table:
+  | Transaction | Date | EV ($B) | EV/Rev | EV/EBITDA | EV/Unit | Premium |
+  |-------------|------|---------|--------|-----------|---------|---------|
+
+Step 4: Apply median transaction multiples to target company
+Step 5: Adjust for size, growth rate, and profitability differences
+```
+
+#### 2.5 Bottom-Up Capacity-to-EBITDA Projection
+
+For companies undergoing rapid capacity expansion (manufacturing, data centers, power generation, mining):
+
+```
+Step 1: Establish current capacity and utilization
+  Current capacity: [XX] units (MW, GW, EH/s, etc.)
+  Current utilization: [XX]%
+  Current EBITDA from this segment: $[XX]M
+
+Step 2: Map disclosed capacity expansion timeline
+  | Quarter | Incremental Capacity | Cumulative | Source |
+  |---------|---------------------|------------|--------|
+  | Q1 2026 | +XX units           | XX total   | Mgmt guidance |
+  | Q2 2026 | +XX units           | XX total   | Contract disclosure |
+  | ...     | ...                 | ...        | ... |
+
+Step 3: Calculate EBITDA at full capacity
+  Growth multiple = Future Capacity / Current Capacity
+  Future EBITDA = Current Segment EBITDA * Growth Multiple
+  (Adjusted for: utilization ramp, pricing changes, operating leverage)
+
+Step 4: Apply appropriate multiple to future EBITDA
+  Fair Value = Future EBITDA * Target EV/EBITDA Multiple
+  Discount to present if >2 years forward (use WACC)
+```
+
+#### 2.6 Davis Double Play Analysis
+
+When both earnings growth AND multiple expansion could occur simultaneously:
+
+```
+Step 1: EPS Trajectory
+  Current EPS: $[XX]
+  Forward 2Y EPS (consensus): $[XX]
+  EPS Growth: [XX]%
+
+Step 2: Multiple Trajectory
+  Current P/E: [XX]x
+  Historical average P/E (10Y): [XX]x
+  Sector median P/E: [XX]x
+  "Normalized" P/E (post rate-cut environment): [XX]x
+
+Step 3: Davis Double Play Calculation
+  If EPS grows from $A to $B and P/E expands from Xx to Yx:
+  Target Price = $B * Yx
+  Total Return = (Target Price / Current Price - 1)
+  Decomposition: [XX]% from EPS growth + [XX]% from PE expansion
+
+Step 4: Davis Double Kill (downside scenario)
+  If EPS disappoints (bear case) and P/E contracts (risk-off):
+  Bear Price = Bear EPS * Trough P/E
+```
+
+#### 2.7 Residual Income Valuation
 
 Best for financial companies and asset-heavy businesses.
 
@@ -321,7 +435,7 @@ Justified P/B from RI:
   If ROE < re: P/B < 1 (value destruction)
 ```
 
-#### 2.5 Dividend Discount Model (DDM)
+#### 2.8 Dividend Discount Model (DDM)
 
 Only for companies with consistent dividend payments.
 
@@ -344,22 +458,29 @@ H-Model (linearly declining growth):
 
 #### 3.1 Define Scenarios
 
-**Bull Case (25% probability default):**
+**Bull Case (default 25% — adjust based on context):**
 - Revenue growth at high end of analyst range or above
 - Margin expansion (operating leverage, mix shift)
 - Multiple expansion (sector re-rating, catalyst)
 - Apply highest reasonable multiples from peer/historical range
 
-**Base Case (50% probability default):**
+**Base Case (default 50% — adjust based on context):**
 - Revenue growth at consensus median
 - Margins stable or per management guidance
 - Multiples at historical average or sector median
 
-**Bear Case (25% probability default):**
+**Bear Case (default 25% — adjust based on context):**
 - Revenue growth at low end or miss
 - Margin compression (competition, cost inflation)
 - Multiple contraction (macro headwinds, sector rotation)
 - Apply lowest reasonable multiples
+
+**Probability Adjustment Guidelines:**
+- Default weights (25/50/25) may be adjusted when evidence supports asymmetry
+- For turnaround stories with high uncertainty: consider 30/40/30
+- For high-conviction catalysts with clear timeline: consider 20/50/30 or 15/55/30
+- For speculative/pre-revenue companies: consider 20/30/50 (heavier bear weight)
+- Always state the rationale for any non-default probability weights
 
 #### 3.2 Calculate Probability-Weighted Fair Value
 
