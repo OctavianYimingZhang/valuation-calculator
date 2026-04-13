@@ -4,7 +4,7 @@ description: >
   Comprehensive public company valuation using DCF, multiples, comparable analysis,
   residual income, sum-of-the-parts, and scenario modeling. Accepts Bloomberg Terminal
   data from screenshots and fetches SEC EDGAR filings for full financial analysis.
-  Produces institutional-grade valuation reports in English.
+  Produces institutional-grade valuation reports.
 triggers:
   - stock valuation
   - company valuation
@@ -786,7 +786,3 @@ Before running models, verify:
 
 ---
 
-## OUTPUT LANGUAGE
-
-All output MUST be in English. Financial data labels, commentary, analysis, and
-conclusions must be written in English regardless of the source language of input data.
