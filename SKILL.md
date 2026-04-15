@@ -1,10 +1,13 @@
 ---
 name: valuation-calculator
 description: >
-  Comprehensive public company valuation using DCF, multiples, comparable analysis,
-  residual income, sum-of-the-parts, and scenario modeling. Accepts Bloomberg Terminal
-  data from screenshots and fetches SEC EDGAR filings for full financial analysis.
-  Produces institutional-grade valuation reports.
+  Archetype-driven public company valuation. Picks ONE primary method per company type
+  (mid-cycle EPS × historical PE for cyclicals, forward EV/EBITDA for growth, unit math
+  for commodities, P/FCF for turnarounds) and treats other methods as sanity checks —
+  never averages across methods. Uses CFA-aligned DCF, multiples, SOTP, residual income,
+  and comparable analysis. Accepts Bloomberg Terminal data from screenshots and fetches
+  SEC EDGAR filings. Produces analyst-style valuation with explicit multiple re-rating
+  thesis and catalyst-to-rerating map.
 triggers:
   - stock valuation
   - company valuation
@@ -19,12 +22,39 @@ triggers:
 
 # Valuation Calculator Skill
 
+## Core Philosophy (Read This First)
+
+Analyst valuations DO NOT average across methods. They pick ONE primary method appropriate to the company's archetype, derive the target price from that method's inputs, and use other methods as brief sanity checks. The previous version of this skill ran 9 methods and output a "Probability-Weighted Fair Value" — that is an anti-pattern. Averaging across methods destroys the point of view.
+
+**Five archetype mappings:**
+
+| Archetype | Primary Method | Rationale |
+|-----------|---------------|-----------|
+| Semiconductor cyclical (DIOD, MCHP, TXN) | **Mid-cycle EPS × 10-year average P/E** | Earnings are cycle-dependent; the market anchors on through-cycle earnings × historical multiple |
+| Growth foundry / specialty semi (TSEM, AMD) | **Forward EV/EBITDA × multiple-expansion thesis** | Multiple expands as growth thesis proves out |
+| Mining / commodity (UUUU, UAMY, MP) | **lb/ton × commodity price × unit margin → EBITDA × peer EV/EBITDA** | Bottom-up unit math is the only honest valuation — see `references/commodity-math-template.md` |
+| Turnaround (CSIQ, COMM) | **P/FCF or replacement value** | Earnings are noisy; FCF or liquidation value anchors the floor |
+| High-growth SaaS / platform (DAVE, HOOD) | **EV/Revenue × Rule-of-40 check** | Market prices on growth until profitability stabilizes |
+| Financial (JPM, WFC, banks) | **Residual Income or P/B × ROE** | Earnings quality depends on reserves; RI captures book-value creation |
+| Pre-revenue / frontier (FCEL, BLDP) | **Scenario framing only — no target** | No denominator exists |
+
+**Rules:**
+
+1. **Pick the primary method FIRST**, before running any model. State it explicitly in the output: "Primary method: mid-cycle EPS × historical average P/E."
+2. **Run the primary method fully** with every input named and sourced.
+3. **Other methods are sanity checks** — max 2-line mention each, no independent "fair value" output.
+4. **No "probability-weighted fair value" averaging** — the median of 9 methods is meaningless because the methods are not independent estimates of the same quantity.
+5. **State the catalyst that re-rates the multiple** from current to target — this is what makes the target price actionable.
+6. **For commodity companies, do unit math FIRST**, then multiples. See `references/commodity-math-template.md`.
+
 ## Purpose
 
-Calculate comprehensive fair value for public companies using multiple CFA-curriculum-aligned
-valuation methodologies. This skill combines Bloomberg Terminal data (provided by user via
-screenshots), SEC filings, and institutional-grade models to produce a multi-method valuation
-with scenario analysis.
+Calculate a defensible target price for public companies using CFA-aligned methodologies
+but with **analyst-style discipline**: one primary method per archetype, bottom-up unit economics
+for commodities, explicit multiple-expansion thesis, peer quartile statistics, and a
+catalyst-to-rerating map. This skill combines Bloomberg Terminal data (provided by user via
+screenshots), SEC filings, and institutional-grade models to produce a valuation that
+answers "what is this stock worth and WHY" — not a spreadsheet output.
 
 ## When to Use
 
@@ -536,48 +566,29 @@ H-Model (linearly declining growth):
 
 ---
 
-### Phase 3: Scenario Analysis
+### Phase 3: Scenario Analysis (Prose, Not Probability-Weighted)
 
-#### 3.1 Define Scenarios
+Produce bull / base / bear scenarios as **one sentence each in prose**. Do NOT assign probability weights and do NOT compute a probability-weighted fair value. Analysts commit to a base case target price — they do not hide behind a weighted average.
 
-**Bull Case (default 25% — adjust based on context):**
-- Revenue growth at high end of analyst range or above
-- Margin expansion (operating leverage, mix shift)
-- Multiple expansion (sector re-rating, catalyst)
-- Apply highest reasonable multiples from peer/historical range
+**Bull Case (one sentence):**
+"[Specific data-driven upside path — e.g., 'If 2027E EPS reaches $8.34 on 85% utilization and multiple expands to 32x on AI rerating, target becomes $267']"
 
-**Base Case (default 50% — adjust based on context):**
-- Revenue growth at consensus median
-- Margins stable or per management guidance
-- Multiples at historical average or sector median
+**Base Case (one sentence — this is the primary target):**
+"[Primary target derivation — e.g., 'Base case applies 10-year average P/E of 29x to 2027E consensus EPS of $7.28, yielding $211 target']"
 
-**Bear Case (default 25% — adjust based on context):**
-- Revenue growth at low end or miss
-- Margin compression (competition, cost inflation)
-- Multiple contraction (macro headwinds, sector rotation)
-- Apply lowest reasonable multiples
+**Bear Case (one sentence):**
+"[Specific downside path — e.g., 'If gross margin recovery stalls below 32% and cyclical EPS stays near $2.50, trough P/E of 18x implies $45']"
 
-**Probability Adjustment Guidelines:**
-- Default weights (25/50/25) may be adjusted when evidence supports asymmetry
-- For turnaround stories with high uncertainty: consider 30/40/30
-- For high-conviction catalysts with clear timeline: consider 20/50/30 or 15/55/30
-- For speculative/pre-revenue companies: consider 20/30/50 (heavier bear weight)
-- Always state the rationale for any non-default probability weights
-
-#### 3.2 Calculate Probability-Weighted Fair Value
-
-```
-Weighted Fair Value = (Bull Price * Bull Prob)
-                    + (Base Price * Base Prob)
-                    + (Bear Price * Bear Prob)
-
-Upside/Downside from Current Price:
-  Upside = (Weighted Fair Value / Current Price - 1) * 100%
-```
+**Rules:**
+- Do NOT assign numeric probabilities unless the user explicitly asks
+- Do NOT average Bull/Base/Bear into a single "weighted fair value"
+- The **Base Case target IS the target price** — bull and bear are context for risk assessment
+- Each scenario must name the specific data thresholds that trigger it (margin %, revenue growth %, multiple level)
+- For turnarounds or high-uncertainty names, state "目标价区间 $X-$Y 取决于 [specific trigger]" instead of a single number
 
 ---
 
-### Phase 4: Comparable Company Analysis
+### Phase 4: Comparable Company Analysis (with Quartile Statistics)
 
 #### 4.1 Peer Selection
 
@@ -587,35 +598,50 @@ Select 3-5 peers based on:
 - Similar business model and revenue mix
 - Similar growth profile
 
-#### 4.2 Comparison Table
+#### 4.2 Comparison Table with Quartile Stats
 
-Build a comparison table with these columns:
+Build a comparison table with **a statistics block at the bottom** showing Max / 75th Percentile / Median / 25th Percentile / Min for each ratio column. This is a stronger analyst format than the old "Median only" version — it lets the reader see quartile bands and locate the target company within the peer distribution.
 
-| Metric | Target | Peer 1 | Peer 2 | Peer 3 | Median |
-|--------|--------|--------|--------|--------|--------|
-| Market Cap | | | | | |
-| Revenue | | | | | |
-| Revenue Growth % | | | | | |
-| Gross Margin % | | | | | |
-| EBITDA Margin % | | | | | |
-| Net Margin % | | | | | |
-| Forward P/E | | | | | |
-| EV/EBITDA | | | | | |
-| P/S | | | | | |
-| P/FCF | | | | | |
-| PEG | | | | | |
-| ROE % | | | | | |
-| ROIC % | | | | | |
-| Net Debt/EBITDA | | | | | |
+(Pattern stolen from `anthropics/financial-services-plugins` comps-analysis skill.)
 
-#### 4.3 Premium/Discount Analysis
+**Rule about which columns deserve stats:** Multiples, margins, and growth rates SHOULD have stats. Absolute size columns (market cap, revenue) should NOT — statistics on absolute size are meaningless. Every ratio should be X / Revenue or X / [something already on the sheet].
 
 ```
-For each multiple:
-  Target Premium = (Target Multiple / Peer Median - 1) * 100%
-  If premium > 0: Company trades at premium — assess if justified by growth/quality
-  If premium < 0: Company trades at discount — assess if undervalued or deserved
+| Company | Market Cap | 2026E Revenue | Rev Growth | GM% | EBITDA% | FCF% | Fwd P/E | EV/EBITDA | P/S | ROIC |
+|---------|-----------|--------------|-----------|-----|---------|------|---------|-----------|-----|------|
+| DIOD    | $3.8B     | $1,680M      | 13%       | 34% | 14.5%   | 9.3% | 22x     | 14.4x     | 2.3x| 6%   |
+| ON Semi | $28B      | $7,100M      | 8%        | 45% | 30%     | 18%  | 18x     | 11x       | 3.9x| 12%  |
+| Vishay  | $2.5B     | $2,900M      | 5%        | 25% | 14%     | 7%   | 15x     | 9x        | 0.9x| 5%   |
+| MCHP    | $32B      | $5,800M      | 6%        | 60% | 38%     | 25%  | 20x     | 14x       | 5.5x| 9%   |
+| **Max** | —         | —            | **13%**   | **60%** | **38%** | **25%**| **22x** | **14.4x** | **5.5x** | **12%** |
+| **75th** | —        | —            | **12%**   | **54%** | **32%** | **22%**| **20.5x**| **14.2x**| **4.7x** | **10.5%** |
+| **Median** | —      | —            | **7%**    | **40%** | **22%** | **14%**| **19x** | **12.5x** | **3.1x** | **7.5%** |
+| **25th** | —        | —            | **6%**    | **30%** | **14%** | **8%** | **17x** | **10x**   | **1.6x** | **5.5%** |
+| **Min** | —         | —            | **5%**    | **25%** | **14%** | **7%** | **15x** | **9x**    | **0.9x** | **5%**  |
 ```
+
+**How to read this:**
+- "DIOD trades at 14.4x EV/EBITDA — 75th percentile of peers (median 12.5x)" → priced at premium
+- "DIOD's 13% revenue growth matches the MAX of the peer set" → growth is why it's premium
+- "DIOD's 6% ROIC is between 25th and median" → returns are below average for the premium
+
+#### 4.3 Premium/Discount Interpretation
+
+Instead of "X trades at Y premium", use the quartile framing:
+
+```
+For each ratio:
+  - Where does target sit in the peer distribution? (Max / 75th / Median / 25th / Min)
+  - If above 75th: trading at premium-company level — what justifies the premium?
+  - If between 25th and median: trading at a discount — is this a value opportunity or a trap?
+  - If below 25th: priced as a distressed name — what fundamental issue is the market pricing in?
+```
+
+**Sector-specific metrics to include:**
+- SaaS / platforms: Add Rule-of-40 (revenue growth % + FCF margin %)
+- Banks / financials: Add ROTCE, efficiency ratio, NIM
+- Industrials / capacity-driven: Add capacity utilization, maintenance capex ratio
+- Mining: Add EV/reserves, AISC ($/lb), replacement cost per ton
 
 ---
 
@@ -630,41 +656,38 @@ Date: [Current Date]
 Current Price: $[XX.XX] | Market Cap: $[XX.X]B
 ================================================================
 
-1. EXECUTIVE SUMMARY
-   - Fair Value Range: $[Low] — $[High]
-   - Base Case Fair Value: $[XX.XX]
-   - Probability-Weighted Fair Value: $[XX.XX]
-   - Upside/Downside: [+/-XX%] from current price
-   - Valuation Verdict: [Undervalued / Fairly Valued / Overvalued]
+1. HEADLINE (Analyst-Style, NOT a Probability-Weighted Average)
+   - PRIMARY METHOD: [e.g., "Mid-cycle EPS × 10-year average P/E"]
+   - WHY THIS METHOD: [one sentence tied to archetype]
+   - TARGET PRICE: $[XX] (from primary method derivation)
+   - UPSIDE FROM CURRENT: [+/-XX]%
+   - MULTIPLE RE-RATING CATALYST: [single specific event]
 
-2. VALUATION SUMMARY TABLE
+2. PRIMARY METHOD DERIVATION (Detailed)
+   - Every input named with source
+   - For cyclicals: 10Y average P/E × 2Y forward EPS
+   - For growth: forward EV/EBITDA × multiple-expansion thesis
+   - For commodity: unit math → EBITDA × peer EV/EBITDA (commodity-math-template.md Phase 1-5)
+   - For turnarounds: P/FCF or replacement value
+   - Show the arithmetic: "$X × Yx = $Z per share"
 
-   | Model                  | Fair Value/Share | vs Current |
-   |------------------------|-----------------|------------|
-   | DCF (FCFF) — Base      | $XX.XX          | +/-XX%     |
-   | DCF (FCFE) — Base      | $XX.XX          | +/-XX%     |
-   | Forward P/E (hist avg) | $XX.XX          | +/-XX%     |
-   | Forward P/E (sector)   | $XX.XX          | +/-XX%     |
-   | EV/EBITDA (hist avg)   | $XX.XX          | +/-XX%     |
-   | P/S (sector)           | $XX.XX          | +/-XX%     |
-   | P/FCF                  | $XX.XX          | +/-XX%     |
-   | PEG-implied            | $XX.XX          | +/-XX%     |
-   | EPS x Hist PE          | $XX.XX          | +/-XX%     |
-   | SOTP (if applicable)   | $XX.XX          | +/-XX%     |
-   | Residual Income        | $XX.XX          | +/-XX%     |
-   | NAD Floor Analysis     | See breakdown   | See floors |
-   | **Median of All**      | **$XX.XX**      | **+/-XX%** |
+3. SANITY CHECKS (Each ≤2 Lines — NOT Independent Fair Values)
 
-3. SCENARIO ANALYSIS
+   | Sanity Check        | Value   | vs Primary | Interpretation |
+   |---------------------|---------|-----------|---------------|
+   | DCF (FCFF)          | $XX.XX  | [tight/wide] | [one phrase] |
+   | EV/EBITDA (hist)    | $XX.XX  | [tight/wide] | [one phrase] |
+   | P/FCF               | $XX.XX  | [tight/wide] | [one phrase] |
+   | NAD Floor Analysis  | See below | — | — |
 
-   | Scenario | Probability | Fair Value | Upside/Down |
-   |----------|-------------|------------|-------------|
-   | Bull     | XX%         | $XX.XX     | +XX%        |
-   | Base     | XX%         | $XX.XX     | +/-XX%      |
-   | Bear     | XX%         | $XX.XX     | -XX%        |
-   | Weighted |             | $XX.XX     | +/-XX%      |
+   DO NOT compute a "Median of All" row. DO NOT average.
 
-4. DCF MODEL DETAILS
+4. SCENARIOS (Prose, One Sentence Each, No Probability Weights)
+   - Bull: [trigger → resulting price, one sentence]
+   - Base: [primary target, one sentence]
+   - Bear: [trigger → resulting price, one sentence]
+
+5. DCF MODEL DETAILS (If DCF is Sanity Check or Primary)
    - Key Assumptions: Revenue growth, margins, WACC, terminal growth
    - Projected cash flows table (5-10 years)
    - Terminal value calculation (both methods)
@@ -691,44 +714,85 @@ Current Price: $[XX.XX] | Market Cap: $[XX.X]B
 
 ---
 
-## MODEL SELECTION LOGIC
+### Phase 6: Historical DCF / Model Backtest (Optional but Recommended)
 
-Apply these rules to determine which models to run:
+Run the PRIMARY valuation method for each of the last 3 years and compare the target price vs the actual price at that point. This is a sanity check analysts do by hand — if the model would have called past moves correctly, the approach is credible; if it was consistently off, you need to re-examine assumptions.
+
+(Pattern stolen from `halessi/DCF` — historical_DCF wrapper.)
 
 ```
-IF company pays dividends consistently:
-  RUN DDM (Gordon Growth or Two-Stage)
-
-IF company has positive earnings:
-  RUN P/E analysis (trailing + forward)
-  RUN PEG analysis
-  RUN EPS x Historical PE method
-
-IF company has positive EBITDA:
-  RUN EV/EBITDA analysis
-  RUN DCF (FCFF) model
-
-IF company has positive free cash flow:
-  RUN P/FCF analysis
-  RUN DCF (FCFE) model
-
-IF company is pre-revenue or pre-profit:
-  RUN P/S or EV/Revenue only
-  RUN backlog-based valuation if applicable
-  NOTE: High uncertainty — widen scenario ranges
-
-IF company has multiple distinct segments:
-  RUN SOTP valuation
-
-IF company is asset-heavy or financial:
-  RUN Residual Income model
-  RUN P/B analysis
-
-ALWAYS RUN:
-  - At least one multiples-based method
-  - Comparable company analysis
-  - Scenario analysis (bull/base/bear)
+For each year Y in [2023, 2024, 2025]:
+  1. Use only data available as of the end of year Y (no look-ahead bias)
+  2. Apply the primary method with year-Y-ending inputs:
+     - Mid-cycle EPS approach: use trailing 10Y average P/E as of year Y, multiply by Y+2 EPS estimate
+     - DCF: use year Y WACC, year Y consensus estimates, year Y terminal g
+     - EV/EBITDA: use year Y forward EBITDA × year Y peer median multiple
+  3. Record: target_price_Y, actual_price_at_end_of_Y, error %
 ```
+
+**Interpretation:**
+- Consistent <15% error → model is credible, trust the current target
+- Errors >30% → either the model doesn't fit, or the prior assumptions were off
+- Directional accuracy (up vs down) matters more than exact number
+
+**Output:**
+
+```
+HISTORICAL BACKTEST
+| Year | Target | Actual | Error % | Notes |
+|------|--------|--------|---------|-------|
+| 2023 | $X.XX  | $Y.YY  | +/-Z%   | Model under-weighted cyclical recovery |
+| 2024 | $X.XX  | $Y.YY  | +/-Z%   | 2024 missed due to inventory correction (non-recurring) |
+| 2025 | $X.XX  | $Y.YY  | +/-Z%   | Model validated once margin bottomed |
+| Mean absolute error: Z% |
+```
+
+---
+
+## MODEL SELECTION LOGIC (Primary Method → Others are Sanity Checks)
+
+The primary method is chosen by ARCHETYPE (see Core Philosophy at the top). Other models run only as sanity checks, max 2 lines each in the output — never as independent fair-value estimates.
+
+```
+Archetype → Primary Method:
+
+mature semiconductor cyclical → Mid-cycle EPS × 10Y average P/E
+  Sanity checks: DCF (FCFF), EV/EBITDA at historical
+
+growth foundry / specialty semi → Forward EV/EBITDA × multiple-expansion thesis
+  Sanity checks: P/S if rev growth >30%, DCF for downside floor
+
+mining / commodity → Unit math (lb/ton × price × margin) → EBITDA × peer EV/EBITDA
+  Sanity checks: replacement cost, NAV on reserves
+  MANDATORY: commodity-math-template.md Phase 1-5
+
+turnaround → P/FCF or replacement value
+  Sanity checks: NAD floor analysis for downside
+
+high-growth SaaS / platform → EV/Revenue with Rule-of-40 check
+  Sanity checks: DCF once profitability stabilizes, P/S vs peers
+
+bank / financial → Residual Income or P/B × ROE
+  Sanity checks: P/E on normalized earnings, P/TBV
+
+pre-revenue / frontier → Scenario framing only, NO target price
+  Sanity checks: None — cannot valuation-gate without denominator
+
+dividend-paying utility / REIT → DDM (Gordon Growth or Two-Stage)
+  Sanity checks: P/FFO for REITs, P/E for utilities
+```
+
+**Rules:**
+- ALWAYS run the primary method fully with every input named and sourced
+- Sanity checks are for showing "the answer is in the same zip code across methods" — they do NOT replace the primary
+- Comparable company analysis ALWAYS runs (with quartile stats, per Phase 4)
+- Scenario analysis ALWAYS runs (as prose, per Phase 3)
+- Historical backtest runs when 3+ years of data exist
+
+**Special cases:**
+- Multi-segment company → additionally run SOTP
+- Currency-cross-border company → additionally run geographic SOTP with political risk discount
+- Pre-revenue / binary catalyst → run scenario framing only, do NOT output a single target price
 
 ---
 
