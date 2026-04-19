@@ -37,6 +37,7 @@ Analyst valuations DO NOT average across methods. They pick ONE primary method a
 | High-growth SaaS / platform (DAVE, HOOD) | **EV/Revenue × Rule-of-40 check** | Market prices on growth until profitability stabilizes |
 | Financial (JPM, WFC, banks) | **Residual Income or P/B × ROE** | Earnings quality depends on reserves; RI captures book-value creation |
 | Pre-revenue / frontier (FCEL, BLDP) | **Scenario framing only — no target** | No denominator exists |
+| Pipeline biotech / E&P reserves / mining projects | **rNPV with stage-specific PoS** | See `rnpv-calculator.md` — PoS × DCF × probability-tree |
 
 **Rules:**
 
@@ -44,8 +45,12 @@ Analyst valuations DO NOT average across methods. They pick ONE primary method a
 2. **Run the primary method fully** with every input named and sourced.
 3. **Other methods are sanity checks** — max 2-line mention each, no independent "fair value" output.
 4. **No "probability-weighted fair value" averaging** — the median of 9 methods is meaningless because the methods are not independent estimates of the same quantity.
-5. **State the catalyst that re-rates the multiple** from current to target — this is what makes the target price actionable.
-6. **For commodity companies, do unit math FIRST**, then multiples. See `references/commodity-math-template.md`.
+5. **State the catalyst that re-rates the multiple** from current to target — this is what makes the target price actionable. Catalyst must have a SPECIFIC date (YYYY-MM or YYYY-Q#).
+6. **For commodity companies, do unit math FIRST**, then multiples. See `references/commodity-math-template.md` (in stock-research-report skill).
+7. **Pipeline / pre-revenue companies use rNPV** — see `rnpv-calculator.md` for stage-adjusted probability-of-success framework.
+8. **INLINE PROSE ARITHMETIC** — math must appear inside sentences with operators and parenthetical asides: "2027E EPS $X × 29x = 目标价 $Y (我认为 29x 不激进因为 [reason])". Free-standing tables without prose are BANNED.
+9. **CLOSING LINE MUST BE SINGLE-NUMBER + UPSIDE MULTIPLE**. Format: "目标价 $X (约 Y.Zx,对应 2026E EPS × 25x)" OR "目标市值 $X 亿,~Y 倍空间". **BANNED closers**: "三法收敛区间 $X-$Y,主推基准 $Y", "综合 DCF/EV-EBITDA/SOTP 公允价值 $X-$Y", any range-only ending.
+10. **First-person voice** — use "我认为..." / "我觉得..." / "我们看到..." when asserting the forecast. At least 1-2 uses in the valuation derivation.
 
 ## Purpose
 
